@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.InteropServices.ComTypes;
+using System.Windows.Forms;
 
 namespace ConsoleApp1.EikanalSolver
 {
@@ -36,9 +37,9 @@ namespace ConsoleApp1.EikanalSolver
 
     Func<double, double, double> RecFunction { get; set; }
 
-    private string ExactSolutionPath { get { return "Results/Eikonal2D/ExactSolution.txt"; }}
-    private string ApproximatedSolutionPath { get { return "Results/Eikonal2D/ApproximatedSolution.txt"; } }
-    private string ApproximatedDifferencePath { get { return "Results/Eikonal2D/ApproximatedDifference.txt"; } }
+    private string ExactSolutionPath { get { return "Results/2D/ExactSolution.txt"; }}
+    private string ApproximatedSolutionPath { get { return "Results/2D/ApproximatedSolution.txt"; } }
+    private string ApproximatedDifferencePath { get { return "Results/2D/ApproximatedDifference.txt"; } }
 
     // Сетка
     RegularMesh2D RegMesh { get; set; }
@@ -57,6 +58,10 @@ namespace ConsoleApp1.EikanalSolver
       ExactSolution = new Matrix(RegMesh.NumberOfStepsX, RegMesh.NumberOfStepsY);
       MeshPoints = new Point[RegMesh.NumberOfStepsX, RegMesh.NumberOfStepsY];
       Initialize();
+    }
+
+    public void Run(Helper.MethodType type)
+    {
       switch (type)
       {
         case Helper.MethodType.FSM:
@@ -91,6 +96,7 @@ namespace ConsoleApp1.EikanalSolver
           Console.WriteLine("Could not find the method.");
           break;
       }
+      MessageBox.Show("Расчёт окончен");
     }
 
     private void Initialize()
@@ -124,6 +130,7 @@ namespace ConsoleApp1.EikanalSolver
             + Math.Abs(RegMesh.Grid[i, j] - ExactSolution[i, j]));
         }
       }
+      sw.Close();
     }
 
     private void WriteResults(string path)
@@ -137,6 +144,7 @@ namespace ConsoleApp1.EikanalSolver
           sw.WriteLine(MeshPoints[i,j].X + " " + MeshPoints[i,j].Y + " " + RegMesh.Grid[i, j]);
         }
       }
+      sw.Close();
     }
 
     private void WriteResults(Matrix matrix, string path)
@@ -148,8 +156,10 @@ namespace ConsoleApp1.EikanalSolver
         for (int j = 0; j < RegMesh.Grid.Coloumns; j++)
         {
           sw.WriteLine(MeshPoints[i, j].X + " " + MeshPoints[i, j].Y + " " + matrix[i, j]);
+          Console.WriteLine(MeshPoints[i, j].X + " " + MeshPoints[i, j].Y + " " + matrix[i, j]);
         }
       }
+      sw.Close();
     }
 
     private void WriteResults(double[,] matrix, string path)
@@ -163,6 +173,7 @@ namespace ConsoleApp1.EikanalSolver
           sw.WriteLine(MeshPoints[i, j].X + " " + MeshPoints[i, j].Y + " " + matrix[i, j]);
         }
       }
+      sw.Close();
     }
 
     private void FillMeshPoints()

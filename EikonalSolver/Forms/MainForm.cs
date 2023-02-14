@@ -1,4 +1,5 @@
-﻿using ConsoleApp1.EikanalSolver;
+﻿using ConsoleApp1;
+using ConsoleApp1.EikanalSolver;
 using EikonalSolver.Forms;
 using MathPrimitivesLibrary.Types.Meshes;
 using System;
@@ -22,19 +23,24 @@ namespace EikonalSolver
     public MainForm()
     {
       InitializeComponent();
-      foreach (string s in methodTypes.Items)
-      {
-        Console.WriteLine(s);
-      }
-      //InitializeEikonal();
     }
 
     private void InitializeEikonal()
     {
-      Mesh2D = new RegularMesh2D();
+      Func<double, double, double> FunctionF = (x, y) =>
+      {
+        //return 2 * Math.Exp(x * x + y * y) * Math.Sqrt(x * x + y * y);
+        return 1;
+      };
+      Func<double, double, double> ExactSolution = (x, y) =>
+      {
+        //return Math.Exp(x * x + y * y) - 1;
+        return Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2));
+      };
+      Mesh2D = new RegularMesh2D(-1, 0, -1, 1, (int)stepsX.Value + 1, (int)stepsY.Value + 1);
       Eik2D = new Eikonal2D(Mesh2D,
-        (x, y) => { return x * 2 + y; },
-        (x, y) => { return x * x + y; }, ConsoleApp1.Helper.MethodType.FSM);
+        FunctionF, ExactSolution, ConsoleApp1.Helper.MethodType.FSM);
+      Eik2D.Run(ConsoleApp1.Helper.MethodType.FSM);
     }
     private void leftUpper_ValueChanged(object sender, EventArgs e)
     {
@@ -70,6 +76,11 @@ namespace EikonalSolver
     {
       Graph graph = new Graph();
       graph.Show();
+    }
+
+    private void button2_Click(object sender, EventArgs e)
+    {
+      InitializeEikonal();
     }
   }
 }
