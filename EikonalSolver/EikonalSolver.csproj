@@ -33,6 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MathPrimitivesLibrary">
+      <HintPath>..\..\..\MathPrimitivesLibrary\MathPrimitivesLibrary\bin\Debug\net481\MathPrimitivesLibrary.dll</HintPath>
+    </Reference>
     <Reference Include="OxyPlot, Version=2.1.2.0, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
       <HintPath>..\packages\OxyPlot.Core.2.1.2\lib\net45\OxyPlot.dll</HintPath>
     </Reference>
@@ -64,7 +67,15 @@
     <Compile Include="Forms\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Program.cs" />
+    <Compile Include="Source\BiCharacteristicMethod2D.cs" />
+    <Compile Include="Source\Eikonal2D.cs" />
+    <Compile Include="Source\Eikonal3D.cs" />
+    <Compile Include="Source\FastMarchingMethod2D.cs" />
+    <Compile Include="Source\FastSweepigMethod2D.cs" />
+    <Compile Include="Source\FiniteDifferenceMethod2D.cs" />
+    <Compile Include="Source\GodunovMethod2D.cs" />
+    <Compile Include="Source\Helper.cs" />
+    <Compile Include="Source\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Forms\Graph.resx">
       <DependentUpon>Graph.cs</DependentUpon>
