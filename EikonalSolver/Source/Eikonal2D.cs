@@ -1,4 +1,5 @@
-﻿using MathPrimitivesLibrary;
+﻿using EikonalSolver;
+using MathPrimitivesLibrary;
 using MathPrimitivesLibrary.Types.Meshes;
 using System;
 using System.Collections.Generic;
@@ -32,6 +33,9 @@ namespace ConsoleApp1.EikanalSolver
     double b { get; set; }
     double c { get; set; }
 
+    int NumberOfIterations { get; set; }
+    double Epsilon { get; set; }
+
     // Функция точного решения T
     Func<double, double, double> ExactSolutionFunc { get; set; }
 
@@ -46,28 +50,30 @@ namespace ConsoleApp1.EikanalSolver
 
     Matrix ExactSolution { get; set; }
 
-    // TODO: Переписать под свой кастомный тип матрицы. 
-    Point[,] MeshPoints { get; set; }
+    Helper.MethodType CalculationType { get; set; }
 
     public Eikonal2D(RegularMesh2D regMesh, Func<double, double, double> recFunction, 
-      Func<double, double, double> exactSolution, Helper.MethodType type)
+      Func<double, double, double> exactSolution, Helper.MethodType type, 
+      int numberOfIterations, double epsilon)
     {
       RegMesh = regMesh;
       RecFunction = recFunction;
       ExactSolutionFunc = exactSolution;
       ExactSolution = new Matrix(RegMesh.NumberOfStepsX, RegMesh.NumberOfStepsY);
-      MeshPoints = new Point[RegMesh.NumberOfStepsX, RegMesh.NumberOfStepsY];
+      CalculationType = type;
+      NumberOfIterations = numberOfIterations; 
+      Epsilon = epsilon;
       Initialize();
     }
 
-    public void Run(Helper.MethodType type)
+    public void Run()
     {
-      switch (type)
+      switch (CalculationType)
       {
         case Helper.MethodType.FSM:
           {
             Console.WriteLine("\t\t\t--- Using FSM (Fast Sweeping Method) ---\t\t\t");
-            FSM();
+            FSM(NumberOfIterations);
             break;
           }
         case Helper.MethodType.FMM:
@@ -101,7 +107,6 @@ namespace ConsoleApp1.EikanalSolver
 
     private void Initialize()
     {
-      FillMeshPoints();
       CalculateExactSolution();
       SetInitialConditions();
     }
@@ -126,7 +131,7 @@ namespace ConsoleApp1.EikanalSolver
       {
         for (int j = 0; j < RegMesh.Grid.Coloumns; j++)
         {
-          sw.WriteLine(MeshPoints[i, j].X + " " + MeshPoints[i, j].Y + " "
+          sw.WriteLine(RegMesh.GridPoints[i, j].X + " " + RegMesh.GridPoints[i, j].Y + " "
             + Math.Abs(RegMesh.Grid[i, j] - ExactSolution[i, j]));
         }
       }
@@ -141,9 +146,10 @@ namespace ConsoleApp1.EikanalSolver
       {
         for (int j = 0; j < RegMesh.Grid.Coloumns; j++)
         {
-          sw.WriteLine(MeshPoints[i,j].X + " " + MeshPoints[i,j].Y + " " + RegMesh.Grid[i, j]);
+          sw.WriteLine(RegMesh.GridPoints[i,j].X + " " + RegMesh.GridPoints[i,j].Y + " " + RegMesh.Grid[i, j]);
         }
       }
+      sw.Flush();
       sw.Close();
     }
 
@@ -155,10 +161,11 @@ namespace ConsoleApp1.EikanalSolver
       {
         for (int j = 0; j < RegMesh.Grid.Coloumns; j++)
         {
-          sw.WriteLine(MeshPoints[i, j].X + " " + MeshPoints[i, j].Y + " " + matrix[i, j]);
-          Console.WriteLine(MeshPoints[i, j].X + " " + MeshPoints[i, j].Y + " " + matrix[i, j]);
+          sw.WriteLine(RegMesh.GridPoints[i, j].X + " " + RegMesh.GridPoints[i, j].Y + " " + matrix[i, j]);
+          Console.WriteLine(RegMesh.GridPoints[i, j].X + " " + RegMesh.GridPoints[i, j].Y + " " + matrix[i, j]);
         }
       }
+      sw.Flush();
       sw.Close();
     }
 
@@ -170,50 +177,15 @@ namespace ConsoleApp1.EikanalSolver
       {
         for (int j = 0; j < RegMesh.Grid.Coloumns; j++)
         {
-          sw.WriteLine(MeshPoints[i, j].X + " " + MeshPoints[i, j].Y + " " + matrix[i, j]);
+          sw.WriteLine(RegMesh.GridPoints[i, j].X + " " + RegMesh.GridPoints[i, j].Y + " " + matrix[i, j]);
         }
       }
+      sw.Flush();
       sw.Close();
-    }
-
-    private void FillMeshPoints()
-    {
-      double tmpX = -1;
-      double tmpY = -1;
-      for (int i =0; i < RegMesh.NumberOfStepsX; i++)
-      {
-        for (int j =0; j < RegMesh.NumberOfStepsY; j++)
-        {
-          MeshPoints[i, j] = new Point(tmpY , tmpX);
-          tmpY += RegMesh.StepLengthY;
-        }
-        tmpX += RegMesh.StepLengthX;
-        tmpY = -1;
-      }
-    }
-
-    public void ShowMeshPoints()
-    {
-      for (int i = 0; i < RegMesh.NumberOfStepsX; i++)
-      {
-        for (int j = 0; j < RegMesh.NumberOfStepsY; j++)
-        {
-          MeshPoints[i, j].Show();
-        }
-        Console.WriteLine();
-      }
     }
 
     private void FiniteDifference()
     {
-      for (int i = 0; i >= 0; i++)
-      {
-        for (int j = 0; j < RegMesh.NumberOfStepsY - 1; j++)
-        {
-          RegMesh.Grid[i, j + 1] = Math.Sqrt(Math.Pow(RegMesh.StepLengthY, 2) * RecFunction(MeshPoints[i, j].X, MeshPoints[i, j].Y) +
-            +2 * RegMesh.Grid[i, j]);
-        }
-      }
     }
 
     private void FMM()
@@ -225,9 +197,9 @@ namespace ConsoleApp1.EikanalSolver
       }
     }
 
-    private void FSM()
+    private void FSM(int iters)
     {
-      int iterations = 5;
+      int iterations = iters;
       int count = 0;
       List<bool[]> sweepDirections = new List<bool[]> { 
         new bool[] { true, true },
@@ -235,8 +207,6 @@ namespace ConsoleApp1.EikanalSolver
         new bool[] { false, false },
         new bool[] { true, false }
       };
-
-      //RegMesh.Grid.Show();
 
       do
       {
@@ -299,13 +269,13 @@ namespace ConsoleApp1.EikanalSolver
           txMin = Math.Min(RegMesh.Grid[i,j - 1], RegMesh.Grid[i,j + 1]);
         }
 
-        if (Math.Abs(txMin - tyMin) >= RegMesh.StepLengthX / RecFunction(MeshPoints[i, j].X, MeshPoints[i, j].Y))
+        if (Math.Abs(txMin - tyMin) >= RegMesh.StepLengthX / RecFunction(RegMesh.GridPoints[i, j].X, RegMesh.GridPoints[i, j].Y))
         {
-          t = Math.Min(txMin, tyMin) + RegMesh.StepLengthX / RecFunction(MeshPoints[i, j].X, MeshPoints[i, j].Y);
+          t = Math.Min(txMin, tyMin) + RegMesh.StepLengthX / RecFunction(RegMesh.GridPoints[i, j].X, RegMesh.GridPoints[i, j].Y);
         }
         else
         {
-          double sqrtP = 2.0 / Math.Pow(RecFunction(MeshPoints[i, j].X, MeshPoints[i, j].Y), 2) * RegMesh.StepLengthX * RegMesh.StepLengthX
+          double sqrtP = 2.0 / Math.Pow(RecFunction(RegMesh.GridPoints[i, j].X, RegMesh.GridPoints[i, j].Y), 2) * RegMesh.StepLengthX * RegMesh.StepLengthX
             - Math.Pow(txMin - tyMin, 2);
           t = (txMin + tyMin + Math.Sqrt(sqrtP)) / 2.0;
         }
@@ -327,7 +297,7 @@ namespace ConsoleApp1.EikanalSolver
         for (int j = 0; j < RegMesh.NumberOfStepsY; j++)
         {
           //RegMesh.Grid[i, j] = ExactSolution(RegMesh.GridPointsX[i, 0], RegMesh.GridPointsY[0, j]);
-          ExactSolution[i,j] = Math.Abs(ExactSolutionFunc(MeshPoints[i, j].X, MeshPoints[i, j].Y));
+          ExactSolution[i,j] = Math.Abs(ExactSolutionFunc(RegMesh.GridPoints[i, j].X, RegMesh.GridPoints[i, j].Y));
         }
       }
       WriteResults(ExactSolution, ExactSolutionPath);
