@@ -1,10 +1,7 @@
 ﻿using ConsoleApp1;
 using ConsoleApp1.EikanalSolver;
-using EikonalSolver.Forms;
 using MathPrimitivesLibrary.Types.Meshes;
 using System;
-using OxyPlot.Series;
-using OxyPlot;
 using System.Windows.Forms;
 
 namespace EikonalSolver
@@ -18,25 +15,13 @@ namespace EikonalSolver
     public MainForm()
     {
       InitializeComponent();
-      InitializeGraph();
-    }
-
-    private void InitializeGraph()
-    {
-      var pm = new PlotModel
-      { 
-        PlotType = PlotType.Cartesian,
-        Background = OxyColors.White
-      };
-      pm.Series.Add(new FunctionSeries(t => 5 * Math.Cos(t), t => 5 * Math.Sin(t), 0, 2 * Math.PI, 0.1));
-      graph.Model = pm;
     }
 
     private void InitializeEikonal()
     {
       Func<double, double, double> FunctionF = (x, y) =>
       {
-        //return 2 * Math.Exp(x * x + y * y) * Math.Sqrt(x * x + y * y);
+        //return 1.0 / (2.0 * Math.Exp(x * x + y * y) * Math.Sqrt(x * x + y * y));
         return 1;
       };
       Func<double, double, double> ExactSolution = (x, y) =>
@@ -83,12 +68,6 @@ namespace EikonalSolver
       leftUpper_ValueChanged(sender, e);
       rightLower_ValueChanged(sender, e);
       grid_ValueChanged(sender, e);
-    }
-
-    private void button1_Click(object sender, EventArgs e)
-    {
-      Graph graph = new Graph();
-      graph.Show();
     }
 
     private void button2_Click(object sender, EventArgs e)

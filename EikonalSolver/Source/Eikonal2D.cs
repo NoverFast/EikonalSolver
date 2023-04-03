@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Forms;
 
@@ -41,14 +42,16 @@ namespace ConsoleApp1.EikanalSolver
 
     Func<double, double, double> RecFunction { get; set; }
 
-    private string ExactSolutionPath { get { return "Results/2D/ExactSolution.txt"; }}
-    private string ApproximatedSolutionPath { get { return "Results/2D/ApproximatedSolution.txt"; } }
-    private string ApproximatedDifferencePath { get { return "Results/2D/ApproximatedDifference.txt"; } }
+    private string ExactSolutionPath { get { return ".\\Results\\2D\\ExactSolution.dat"; }}
+    private string ApproximatedSolutionPath { get { return ".\\Results\\2D\\ApproximatedSolution.dat"; } }
+    private string ApproximatedDifferencePath { get { return ".\\Results\\2D\\ApproximatedDifference.dat"; } }
 
     // Сетка
     RegularMesh2D RegMesh { get; set; }
 
     Matrix ExactSolution { get; set; }
+
+    Point OriginPoint { get; set; }
 
     Helper.MethodType CalculationType { get; set; }
 
@@ -63,6 +66,7 @@ namespace ConsoleApp1.EikanalSolver
       CalculationType = type;
       NumberOfIterations = numberOfIterations; 
       Epsilon = epsilon;
+      OriginPoint = new Point(RegMesh.NumberOfStepsX / 2, RegMesh.NumberOfStepsY / 2);
       Initialize();
     }
 
@@ -103,6 +107,34 @@ namespace ConsoleApp1.EikanalSolver
           break;
       }
       MessageBox.Show("Расчёт окончен");
+      MessageBox.Show($"Данные точного решения были записаны в {ExactSolutionPath}\n" +
+        $"Данные приближённого решения были записаны в {ApproximatedSolutionPath}\n" +
+        $"Данные ошибки приближённого решения были записаны в {ApproximatedDifferencePath}");
+      PlotGraphs();
+    }
+
+    private void PlotGraphs(bool UseHeatmap=false)
+    {
+      Console.WriteLine("Building plots...");
+      GnuPlot.Set("title 'Solutions'");
+      GnuPlot.Set("isosamples 30", "hidden3d");
+      GnuPlot.Set("dgrid3d 100,100,2");
+      GnuPlot.Set("terminal wxt size 2400,1200");
+      GnuPlot.HoldOn();
+      GnuPlot.SPlot($"{ExactSolutionPath}", "using 1:2:3 with points title " +
+        "'Exact Solution'");
+      GnuPlot.Replot();
+      GnuPlot.SPlot($"{ApproximatedSolutionPath}", "using 1:2:3 with points " +
+        "title 'Approximated Solution'");
+      DialogResult result = MessageBox.Show("Show Difference?", "Plots", MessageBoxButtons.YesNo);
+      if (result == DialogResult.No)
+      {
+        return;
+      }
+      GnuPlot.HoldOff();
+      GnuPlot.Set("terminal wxt 3 size 2400,1200");
+      GnuPlot.Set("title 'Difference'");
+      GnuPlot.SPlot($"{ApproximatedDifferencePath}", "using 1:2:3 with points title 'Difference'");
     }
 
     private void Initialize()
@@ -120,12 +152,16 @@ namespace ConsoleApp1.EikanalSolver
           RegMesh.Grid[i, j] = Double.MaxValue;
         }
       }
-      RegMesh.Grid[RegMesh.NumberOfStepsX / 2, RegMesh.NumberOfStepsY / 2] = 0;
+      RegMesh.Grid[(int)OriginPoint.X, (int)OriginPoint.Y] = 0;
     }
 
     private void WriteApproximationDifference(string path)
     {
       Helper.ClearFile(path);
+      if (File.Exists(path) == false)
+      {
+        File.Create(path);
+      }
       StreamWriter sw = new StreamWriter(path);
       for (int i = 0; i < RegMesh.Grid.Rows; i++)
       {
@@ -141,6 +177,10 @@ namespace ConsoleApp1.EikanalSolver
     private void WriteResults(string path)
     {
       Helper.ClearFile(path);
+      if (File.Exists(path) == false)
+      {
+        File.Create(path);
+      }
       StreamWriter sw = new StreamWriter(path);
       for (int i = 0; i < RegMesh.Grid.Rows; i++)
       {
@@ -156,13 +196,17 @@ namespace ConsoleApp1.EikanalSolver
     private void WriteResults(Matrix matrix, string path)
     {
       Helper.ClearFile(path);
+      if (File.Exists(path) == false)
+      {
+        File.Create(path);
+      }
       StreamWriter sw = new StreamWriter(path);
       for (int i = 0; i < RegMesh.Grid.Rows; i++)
       {
         for (int j = 0; j < RegMesh.Grid.Coloumns; j++)
         {
           sw.WriteLine(RegMesh.GridPoints[i, j].X + " " + RegMesh.GridPoints[i, j].Y + " " + matrix[i, j]);
-          Console.WriteLine(RegMesh.GridPoints[i, j].X + " " + RegMesh.GridPoints[i, j].Y + " " + matrix[i, j]);
+          //Console.WriteLine(RegMesh.GridPoints[i, j].X + " " + RegMesh.GridPoints[i, j].Y + " " + matrix[i, j]);
         }
       }
       sw.Flush();
@@ -172,6 +216,10 @@ namespace ConsoleApp1.EikanalSolver
     private void WriteResults(double[,] matrix, string path)
     {
       Helper.ClearFile(path);
+      if (File.Exists(path) == false)
+      {
+        File.Create(path);
+      }
       StreamWriter sw = new StreamWriter(path);
       for (int i = 0; i < RegMesh.Grid.Rows; i++)
       {
@@ -190,11 +238,102 @@ namespace ConsoleApp1.EikanalSolver
 
     private void FMM()
     {
+      /*
       Matrix farAwayPoint = new Matrix(RegMesh.NumberOfStepsX, RegMesh.NumberOfStepsY);
       for (int i = 0; i < farAwayPoint.Rows; i++)
       {
-
+        for (int j =0; j < farAwayPoint.Coloumns; j++)
+        {
+          farAwayPoint[i, j] = 2
+        }
       }
+
+      for (int i = 0; i <   )
+
+
+      for (int i = 0; i < origins.size(); i++)
+      {
+        vector<int> point = origins[i];
+        space2d[(int)point[0] * N + (int)point[1]] = 0;
+        far_away[(int)point[0] * N + (int)point[1]] = 0;
+      }
+
+      // Get Neighbors of Origins points
+      vector<vector<int>> narrowBandIndexOfOrigins = getIndexesNarrowBand(origins);
+
+      // Label Neighbors of Origins points as narrowBand
+      for (int i = 0; i < narrowBandIndexOfOrigins.size(); i++)
+      {
+        vector<int> row = narrowBandIndexOfOrigins[i];
+        far_away[row[0] * N + row[1]] = 1;
+
+        // calculate eikonal for all narrowBand
+        calculateEikonal2d(row[0], row[1]);
+      }
+
+      // Get all value of narrowBandIndexOfOrigins and save them to the heap
+
+      int iter = 1;
+
+      clock_t tstart = clock();
+
+      while (true)
+      {
+        // Get all Indexes of narrowBand
+        vector<vector<int>> indexesOnesNarrowBand = getIndexesNarrowBand(far_away);
+
+        // When not finished all element inside narrowband
+        if (!indexesOnesNarrowBand.empty())
+        {
+          // Get the minimum element index
+          vector<int> minIndex = getIndexesMinNarrowBand(space2d, indexesOnesNarrowBand);
+          // Add the minimum to the frozen elements
+          far_away[minIndex[0] * N + minIndex[1]] = 0;
+
+          // Get the neighbors of the minvalue
+          vector<vector<int>> newNeighborsIndexes;
+          for (int j = 0; j < neighbors.size(); j++)
+          {
+            vector<int> ind;
+            ind.push_back(minIndex[0] + neighbors[j][0]);
+            ind.push_back(minIndex[1] + neighbors[j][1]);
+            newNeighborsIndexes.push_back(ind);
+          }
+
+          // Put 1 where 2 in far_away (label far away as narrowBand)
+          for (int i = 0; i < newNeighborsIndexes.size(); i++)
+          {
+            vector<int> current = newNeighborsIndexes[i];
+            if (far_away[current[0] * N + current[1]] == 2)
+            {
+              far_away[current[0] * N + current[1]] = 1;
+            }
+          }
+          // We got new narrowBand... must get all indexes and recalculate distance field value for new added...
+
+          // Calculate U tentative of that
+          for (int i = 0; i < newNeighborsIndexes.size(); i++)
+          {
+            vector<int> currentIndex = newNeighborsIndexes[i];
+
+            calculateEikonal2d(currentIndex[0], currentIndex[1]);
+          }
+        }
+
+        if (iter == N * N)
+        {
+          break;
+        }
+        iter++;
+      }
+
+      delete[] far_away;
+      clock_t tfinish = clock();
+      std::cout << "Sequential FMM - Time: \tt = " << (tfinish - tstart) / (double)CLOCKS_PER_SEC << endl;
+      std::cout << "  FMM - N: \tN = " << N << endl;
+      std::cout << "  FMM solving" << endl;
+      /*std::cout << "Writing file..." << endl;
+      writeFile2d(fname);*/
     }
 
     private void FSM(int iters)
@@ -233,9 +372,8 @@ namespace ConsoleApp1.EikanalSolver
         Console.WriteLine($"Current iteration: {count}\n");
         Console.WriteLine((RegMesh.Grid - ExactSolution).Norm());
       } while (count != iterations);
+      WriteResults(ApproximatedSolutionPath);
       WriteApproximationDifference(ApproximatedDifferencePath);
-      //WriteResultsTmp(ApproximatedSolutionPath);
-      //WriteResults(ApproximatedSolutionPath);
     }
 
     private void Sweep2D(int i, int j)
@@ -296,7 +434,6 @@ namespace ConsoleApp1.EikanalSolver
       {
         for (int j = 0; j < RegMesh.NumberOfStepsY; j++)
         {
-          //RegMesh.Grid[i, j] = ExactSolution(RegMesh.GridPointsX[i, 0], RegMesh.GridPointsY[0, j]);
           ExactSolution[i,j] = Math.Abs(ExactSolutionFunc(RegMesh.GridPoints[i, j].X, RegMesh.GridPoints[i, j].Y));
         }
       }

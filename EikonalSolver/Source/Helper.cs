@@ -15,7 +15,10 @@ namespace ConsoleApp1
     }
     public static void ClearFile(string path)
     {
-      File.WriteAllText(path, string.Empty);
+      if (File.Exists(path))
+      {
+        File.WriteAllText(path, string.Empty);
+      }
     }
     public static void WriteToFile(Matrix m, string path)
     {
